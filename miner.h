@@ -12,7 +12,7 @@ extern "C" {
 #include <sys/time.h>
 #include <pthread.h>
 #include <jansson.h>
-#include <curl/curl.h>
+#include <curl.h>
 
 #ifdef WIN32
 #define snprintf(...) _snprintf(__VA_ARGS__)

@@ -34,8 +34,8 @@
 #endif
 #endif
 #include <jansson.h>
-#include <curl/curl.h>
-#include <openssl/sha.h>
+#include <curl.h>
+#include <sha.h>
 #include "compat.h"
 #include "miner.h"
 
@@ -640,7 +640,7 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
             cryptonight_hash((void *)hash, (const void *)work->data, 76);
             char *hashhex = bin2hex((const unsigned char *)hash, 32);
             snprintf(s, JSON_BUF_LEN,
-                    "{\"method\": \"submit\", \"params\": {\"id\": \"%s\", \"job_id\": \"%s\", \"nonce\": \"%s\", \"result\": \"%s\"}, \"id\":1}\r\n",
+                    "{\"method\": \"submit\", \"params\": {\"id\": \"%s\", \"job_id\": \"%s\", \"nonce\": \"%s\", \"result\": \"%s\"}, \"id\":1}",
                     rpc2_id, work->job_id, noncestr, hashhex);
             free(hashhex);
         } else {
@@ -679,7 +679,7 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
             cryptonight_hash((void *)hash, (const void *)work->data, 76);
             char *hashhex = bin2hex((const unsigned char *)hash, 32);
             snprintf(s, JSON_BUF_LEN,
-                    "{\"method\": \"submit\", \"params\": {\"id\": \"%s\", \"job_id\": \"%s\", \"nonce\": \"%s\", \"result\": \"%s\"}, \"id\":1}\r\n",
+                    "{\"method\": \"submit\", \"params\": {\"id\": \"%s\", \"job_id\": \"%s\", \"nonce\": \"%s\", \"result\": \"%s\"}, \"id\":1}",
                     rpc2_id, work->job_id, noncestr, hashhex);
             free(noncestr);
             free(hashhex);
@@ -925,7 +925,7 @@ static void *workio_thread(void *userdata)
 		return NULL;
 	}
 
-    if(!have_stratum) {
+    if(!have_stratum && !opt_benchmark) {
         ok = workio_login(curl);
     }
 
@@ -1121,6 +1121,7 @@ static void *miner_thread(void *userdata)
             device_map[thr_id], device_config[thr_id][0], device_mpcount[thr_id]);
 
     uint32_t *nonceptr = (uint32_t*) (((char*)work.data) + (jsonrpc_2 ? 39 : 76));
+	end_nonce = (*nonceptr & 0xff000000U) + (0xffffffU / opt_n_threads * (thr_id + 1) - 0x20);
 
 	while (1) {
 		unsigned long hashes_done;
@@ -1161,7 +1162,8 @@ static void *miner_thread(void *userdata)
         if (jsonrpc_2 ? memcmp(work.data, g_work.data, 39) || memcmp(((uint8_t*) work.data) + 43, ((uint8_t*) g_work.data) + 43, 33) : memcmp(work.data, g_work.data, 76)) {
 			memcpy(&work, &g_work, sizeof(struct work));
             nonceptr = (uint32_t*) (((char*)work.data) + (jsonrpc_2 ? 39 : 76));
-            *nonceptr = 0xffffffffU / opt_n_threads * thr_id;
+            //*nonceptr = 0xffffffffU / opt_n_threads * thr_id;
+			*nonceptr = (*nonceptr & 0xff000000U) + (0xffffffU / opt_n_threads * thr_id);
 		} else
             ++(*nonceptr);
 		pthread_mutex_unlock(&g_work_lock);

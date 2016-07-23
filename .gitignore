@@ -1,1 +1,6 @@
 cpuminer-config.h
+ccminer.opensdf
+*.sdf
+ccminer.v12.suo
+ccminer.vcxproj.user
+[Rr]elease/
