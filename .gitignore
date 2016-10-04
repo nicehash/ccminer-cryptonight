@@ -4,3 +4,4 @@ ccminer.opensdf
 ccminer.v12.suo
 ccminer.vcxproj.user
 [Rr]elease/
+*.pdb
